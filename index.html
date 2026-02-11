@@ -3,73 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3 Столпа</title>
+    <title>DISCIPLINA</title>
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <style>
         body {
-            background-color: #121212;
+            background-color: #000;
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Impact', 'Arial Black', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
+            text-transform: uppercase;
         }
-        .container { text-align: center; width: 90%; }
-        h1 { font-size: 1.5rem; margin-bottom: 20px; color: #aaa; }
+        .container { text-align: center; width: 90%; max-width: 400px; }
+        
+        /* Ранги */
+        #rank { font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 5px; }
+        .rank-common { color: #b0b0b0; }        /* Обычный */
+        .rank-uncommon { color: #32ff7e; }      /* Необычный */
+        .rank-rare { color: #18dcff; }          /* Редкий */
+        .rank-epic { color: #c56cf0; }          /* Эпический */
+        .rank-legendary { color: #ffb142; }     /* Легендарный */
+        .rank-mythical { color: #ff5252; }      /* Мифический */
+
+        .streak-val { font-size: 3rem; margin: 10px 0; line-height: 1; }
         
         .pillar-btn {
             width: 100%;
-            padding: 20px;
-            margin: 10px 0;
-            border: 2px solid #333;
-            border-radius: 15px;
-            background: #1e1e1e;
+            padding: 22px;
+            margin: 12px 0;
+            border: 2px solid #222;
+            border-radius: 4px;
+            background: #111;
             color: #fff;
-            font-size: 1.2rem;
-            font-weight: bold;
-            transition: 0.3s;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            transition: 0.2s;
             cursor: pointer;
         }
         
         .pillar-btn.active {
-            border-color: #4CAF50;
-            background: rgba(76, 175, 80, 0.2);
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+            border-color: #fff;
+            background: #fff;
+            color: #000;
+        }
+
+        .failure-msg {
+            color: #ff5252;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            min-height: 1.2rem;
+            font-style: italic;
         }
 
         .chain-container {
-            margin-top: 30px;
+            margin-top: 25px;
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 8px;
+            gap: 5px;
         }
-        .link {
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background: #333;
-        }
-        .link.filled { background: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
-        
-        .streak-info { margin-top: 15px; font-size: 1.1rem; color: #4CAF50; }
+        .link { width: 8px; height: 8px; background: #222; }
+        .link.filled { background: #fff; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="streak-info">Серия: <span id="streak-count">0</span> дн.</div>
-    <h1>3 СТОЛПА</h1>
+    <div id="rank" class="rank-common">Загрузка...</div>
+    <div class="streak-val" id="streak-count">0</div>
+    <div style="font-size: 0.8rem; color: #444;">дней в строю</div>
     
-    <button class="pillar-btn" onclick="togglePillar(this, 'body')">ТЕЛО</button>
-    <button class="pillar-btn" onclick="togglePillar(this, 'mind')">РАЗУМ</button>
-    <button class="pillar-btn" onclick="togglePillar(this, 'spirit')">ДУХ</button>
+    <div style="margin-top: 30px;">
+        <button class="pillar-btn" onclick="togglePillar(this, 'body')">ТЕЛО</button>
+        <button class="pillar-btn" onclick="togglePillar(this, 'mind')">РАЗУМ</button>
+        <button class="pillar-btn" onclick="togglePillar(this, 'spirit')">ДУХ</button>
+    </div>
 
+    <div id="fail-text" class="failure-msg"></div>
     <div class="chain-container" id="chain"></div>
 </div>
 
@@ -80,21 +95,40 @@
         today: { body: false, mind: false, spirit: false }
     };
 
-    // Проверка на новый день
     const now = new Date().toLocaleDateString();
+
+    // Проверка пропуска дня
     if (progress.lastDate !== now) {
-        // Если пропустили день — сброс (кроме случая если это самый первый запуск)
         if (progress.lastDate) {
-            const last = new Date(progress.lastDate);
+            const last = new Date(progress.lastDate.split('.').reverse().join('-'));
             const today = new Date();
             const diff = (today - last) / (1000 * 60 * 60 * 24);
-            if (diff > 1.5) progress.streak = 0; 
+            
+            if (diff > 1.9) { // Пропустили больше суток
+                progress.streak = 0;
+                document.getElementById('fail-text').innerText = "Сдаться — удел слабых. Вставай и начни заново!";
+            }
         }
         progress.today = { body: false, mind: false, spirit: false };
     }
 
+    function getRank(s) {
+        if (s >= 61) return { name: 'Мифический', class: 'rank-mythical' };
+        if (s >= 31) return { name: 'Легендарный', class: 'rank-legendary' };
+        if (s >= 16) return { name: 'Эпический', class: 'rank-epic' };
+        if (s >= 8) return { name: 'Редкий', class: 'rank-rare' };
+        if (s >= 4) return { name: 'Необычный', class: 'rank-uncommon' };
+        return { name: 'Обычный', class: 'rank-common' };
+    }
+
     function updateUI() {
+        const rankInfo = getRank(progress.streak);
+        const rankEl = document.getElementById('rank');
+        rankEl.innerText = rankInfo.name;
+        rankEl.className = rankInfo.class;
+
         document.getElementById('streak-count').innerText = progress.streak;
+        
         const btns = document.querySelectorAll('.pillar-btn');
         const keys = ['body', 'mind', 'spirit'];
         btns.forEach((btn, i) => {
@@ -102,10 +136,9 @@
             else btn.classList.remove('active');
         });
 
-        // Рисуем цепь
         const chainDiv = document.getElementById('chain');
         chainDiv.innerHTML = '';
-        for (let i = 0; i < 30; i++) { // Показываем 30 дней
+        for (let i = 0; i < 40; i++) {
             const link = document.createElement('div');
             link.className = 'link' + (i < progress.streak ? ' filled' : '');
             chainDiv.appendChild(link);
@@ -115,14 +148,13 @@
     function togglePillar(btn, type) {
         progress.today[type] = !progress.today[type];
         
-        // Если все три нажаты — увеличиваем серию
         if (progress.today.body && progress.today.mind && progress.today.spirit) {
             if (progress.lastDate !== now) {
                 progress.streak++;
                 progress.lastDate = now;
+                document.getElementById('fail-text').innerText = ""; 
             }
         } else if (progress.lastDate === now) {
-            // Если отжали кнопку в тот же день
             progress.streak--;
             progress.lastDate = null;
         }
