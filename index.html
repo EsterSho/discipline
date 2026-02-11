@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 Столпа</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #121212; color: white; text-align: center; padding: 20px; touch-action: manipulation; }
+        .card { background: #1e1e1e; padding: 25px; border-radius: 25px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .streak-val { font-size: 64px; font-weight: 800; color: #2ecc71; margin: 0; }
+        .btn { width: 100%; padding: 22px; margin: 12px 0; border: 2px solid #333; border-radius: 18px; background: #262626; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .done { background: #2ecc71 !important; border-color: #2ecc71; transform: scale(0.96); }
+        small { display: block; opacity: 0.5; font-size: 13px; font-weight: normal; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="streak-val" id="streakDisplay">0</div>
+        <div style="opacity: 0.6; letter-spacing: 2px;">ДНЕЙ В СТРОЮ</div>
+    </div>
+
+    <button class="btn" onclick="tap(this, 'body')" id="bodyBtn">ТЕЛО <small>Отжимания + Приседания</small></button>
+    <button class="btn" onclick="tap(this, 'mind')" id="mindBtn">РАЗУМ <small>10 страниц чтения</small></button>
+    <button class="btn" onclick="tap(this, 'spirit')" id="spiritBtn">ДУХ <small>Контрастный душ (КС)</small></button>
+
+    <script>
+        function tap(el, habit) {
+            el.classList.toggle('done');
+            // Здесь будет логика сохранения в следующем шаге
+        }
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+    </script>
+</body>
+</html>
