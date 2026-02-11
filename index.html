@@ -7,30 +7,132 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: -apple-system, sans-serif; background: #121212; color: white; text-align: center; padding: 20px; touch-action: manipulation; }
-        .card { background: #1e1e1e; padding: 25px; border-radius: 25px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .streak-val { font-size: 64px; font-weight: 800; color: #2ecc71; margin: 0; }
-        .btn { width: 100%; padding: 22px; margin: 12px 0; border: 2px solid #333; border-radius: 18px; background: #262626; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-        .done { background: #2ecc71 !important; border-color: #2ecc71; transform: scale(0.96); }
-        small { display: block; opacity: 0.5; font-size: 13px; font-weight: normal; margin-top: 4px; }
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container { text-align: center; width: 90%; }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; color: #aaa; }
+        
+        .pillar-btn {
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            border: 2px solid #333;
+            border-radius: 15px;
+            background: #1e1e1e;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        
+        .pillar-btn.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .chain-container {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        .link {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #333;
+        }
+        .link.filled { background: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
+        
+        .streak-info { margin-top: 15px; font-size: 1.1rem; color: #4CAF50; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="streak-val" id="streakDisplay">0</div>
-        <div style="opacity: 0.6; letter-spacing: 2px;">ДНЕЙ В СТРОЮ</div>
-    </div>
 
-    <button class="btn" onclick="tap(this, 'body')" id="bodyBtn">ТЕЛО <small>Отжимания + Приседания</small></button>
-    <button class="btn" onclick="tap(this, 'mind')" id="mindBtn">РАЗУМ <small>10 страниц чтения</small></button>
-    <button class="btn" onclick="tap(this, 'spirit')" id="spiritBtn">ДУХ <small>Контрастный душ (КС)</small></button>
+<div class="container">
+    <div class="streak-info">Серия: <span id="streak-count">0</span> дн.</div>
+    <h1>3 СТОЛПА</h1>
+    
+    <button class="pillar-btn" onclick="togglePillar(this, 'body')">ТЕЛО</button>
+    <button class="pillar-btn" onclick="togglePillar(this, 'mind')">РАЗУМ</button>
+    <button class="pillar-btn" onclick="togglePillar(this, 'spirit')">ДУХ</button>
 
-    <script>
-        function tap(el, habit) {
-            el.classList.toggle('done');
-            // Здесь будет логика сохранения в следующем шаге
+    <div class="chain-container" id="chain"></div>
+</div>
+
+<script>
+    let progress = JSON.parse(localStorage.getItem('disciplineProgress')) || {
+        streak: 0,
+        lastDate: null,
+        today: { body: false, mind: false, spirit: false }
+    };
+
+    // Проверка на новый день
+    const now = new Date().toLocaleDateString();
+    if (progress.lastDate !== now) {
+        // Если пропустили день — сброс (кроме случая если это самый первый запуск)
+        if (progress.lastDate) {
+            const last = new Date(progress.lastDate);
+            const today = new Date();
+            const diff = (today - last) / (1000 * 60 * 60 * 24);
+            if (diff > 1.5) progress.streak = 0; 
         }
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-    </script>
+        progress.today = { body: false, mind: false, spirit: false };
+    }
+
+    function updateUI() {
+        document.getElementById('streak-count').innerText = progress.streak;
+        const btns = document.querySelectorAll('.pillar-btn');
+        const keys = ['body', 'mind', 'spirit'];
+        btns.forEach((btn, i) => {
+            if (progress.today[keys[i]]) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        // Рисуем цепь
+        const chainDiv = document.getElementById('chain');
+        chainDiv.innerHTML = '';
+        for (let i = 0; i < 30; i++) { // Показываем 30 дней
+            const link = document.createElement('div');
+            link.className = 'link' + (i < progress.streak ? ' filled' : '');
+            chainDiv.appendChild(link);
+        }
+    }
+
+    function togglePillar(btn, type) {
+        progress.today[type] = !progress.today[type];
+        
+        // Если все три нажаты — увеличиваем серию
+        if (progress.today.body && progress.today.mind && progress.today.spirit) {
+            if (progress.lastDate !== now) {
+                progress.streak++;
+                progress.lastDate = now;
+            }
+        } else if (progress.lastDate === now) {
+            // Если отжали кнопку в тот же день
+            progress.streak--;
+            progress.lastDate = null;
+        }
+
+        localStorage.setItem('disciplineProgress', JSON.stringify(progress));
+        updateUI();
+    }
+
+    updateUI();
+</script>
+
 </body>
 </html>
